@@ -1,115 +1,104 @@
-# Import necessary libraries
-import databutton as db
 import streamlit as st
-import openai
-from brain import get_index_for_pdf
-from langchain.chains import RetrievalQA
+from dotenv import load_dotenv
+from PyPDF2 import PdfReader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
-import os
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+from htmlTemplates import css, bot_template, user_template
+from langchain.llms import HuggingFaceHub
 
-# Set the title for the Streamlit app
-st.title("RAG enhanced Chatbot")
-
-# Set up the OpenAI API key from databutton secrets
-os.environ["OPENAI_API_KEY"] = db.secrets.get("OPENAI_API_KEY")
-openai.api_key = db.secrets.get("OPENAI_API_KEY")
-
-
-# Cached function to create a vectordb for the provided PDF files
-@st.cache_data
-def create_vectordb(files, filenames):
-    # Show a spinner while creating the vectordb
-    with st.spinner("Vector database"):
-        vectordb = get_index_for_pdf(
-            [file.getvalue() for file in files], filenames, openai.api_key
-        )
-    return vectordb
+def get_pdf_text(pdf_docs):
+    text = ""
+    for pdf in pdf_docs:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            text += page.extract_text()
+    return text
 
 
-# Upload PDF files using Streamlit's file uploader
-pdf_files = st.file_uploader("", type="pdf", accept_multiple_files=True)
+def get_text_chunks(text):
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len
+    )
+    chunks = text_splitter.split_text(text)
+    return chunks
 
-# If PDF files are uploaded, create the vectordb and store it in the session state
-if pdf_files:
-    pdf_file_names = [file.name for file in pdf_files]
-    st.session_state["vectordb"] = create_vectordb(pdf_files, pdf_file_names)
 
-# Define the template for the chatbot prompt
-prompt_template = """
-    You are a helpful Assistant who answers to users questions based on multiple contexts given to you.
+def get_vectorstore(text_chunks):
+    embeddings = OpenAIEmbeddings()
+    # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
+    vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    return vectorstore
 
-    Keep your answer short and to the point.
-    
-    The evidence are the context of the pdf extract with metadata. 
-    
-    Carefully focus on the metadata specially 'filename' and 'page' whenever answering.
-    
-    Make sure to add filename and page number at the end of sentence you are citing to.
-        
-    Reply "Not applicable" if text is irrelevant.
-     
-    The PDF content is:
-    {pdf_extract}
-"""
 
-# Get the current prompt from the session state or set a default value
-prompt = st.session_state.get("prompt", [{"role": "system", "content": "none"}])
+def get_conversation_chain(vectorstore):
+    llm = ChatOpenAI()
+    # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
-# Display previous chat messages
-for message in prompt:
-    if message["role"] != "system":
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
+    memory = ConversationBufferMemory(
+        memory_key='chat_history', return_messages=True)
+    conversation_chain = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        retriever=vectorstore.as_retriever(),
+        memory=memory
+    )
+    return conversation_chain
 
-# Get the user's question using Streamlit's chat input
-question = st.chat_input("Ask anything")
 
-# Handle the user's question
-if question:
-    vectordb = st.session_state.get("vectordb", None)
-    if not vectordb:
-        with st.message("assistant"):
-            st.write("You need to provide a PDF")
-            st.stop()
+def handle_userinput(user_question):
+    response = st.session_state.conversation({'question': user_question})
+    st.session_state.chat_history = response['chat_history']
 
-    # Search the vectordb for similar content to the user's question
-    search_results = vectordb.similarity_search(question, k=3)
-    # search_results
-    pdf_extract = "/n ".join([result.page_content for result in search_results])
+    for i, message in enumerate(st.session_state.chat_history):
+        if i % 2 == 0:
+            st.write(user_template.replace(
+                "{{MSG}}", message.content), unsafe_allow_html=True)
+        else:
+            st.write(bot_template.replace(
+                "{{MSG}}", message.content), unsafe_allow_html=True)
 
-    # Update the prompt with the pdf extract
-    prompt[0] = {
-        "role": "system",
-        "content": prompt_template.format(pdf_extract=pdf_extract),
-    }
 
-    # Add the user's question to the prompt and display it
-    prompt.append({"role": "user", "content": question})
-    with st.chat_message("user"):
-        st.write(question)
+def main():
+    load_dotenv()
+    st.set_page_config(page_title="Chat with multiple PDFs",
+                       page_icon=":books:")
+    st.write(css, unsafe_allow_html=True)
 
-    # Display an empty assistant message while waiting for the response
-    with st.chat_message("assistant"):
-        botmsg = st.empty()
+    if "conversation" not in st.session_state:
+        st.session_state.conversation = None
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = None
 
-    # Call ChatGPT with streaming and display the response as it comes
-    response = []
-    result = ""
-    for chunk in openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", messages=prompt, stream=True
-    ):
-        text = chunk.choices[0].get("delta", {}).get("content")
-        if text is not None:
-            response.append(text)
-            result = "".join(response).strip()
-            botmsg.write(result)
+    st.header("Chat with multiple PDFs :books:")
+    user_question = st.text_input("Ask a question about your documents:")
+    if user_question:
+        handle_userinput(user_question)
 
-    # Add the assistant's response to the prompt
-    prompt.append({"role": "assistant", "content": result})
+    with st.sidebar:
+        st.subheader("Your documents")
+        pdf_docs = st.file_uploader(
+            "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
+        if st.button("Process"):
+            with st.spinner("Processing"):
+                # get pdf text
+                raw_text = get_pdf_text(pdf_docs)
 
-    # Store the updated prompt in the session state
-    st.session_state["prompt"] = prompt
-    prompt.append({"role": "assistant", "content": result})
+                # get the text chunks
+                text_chunks = get_text_chunks(raw_text)
 
-    # Store the updated prompt in the session state
-    st.session_state["prompt"] = prompt
+                # create vector store
+                vectorstore = get_vectorstore(text_chunks)
+
+                # create conversation chain
+                st.session_state.conversation = get_conversation_chain(
+                    vectorstore)
+
+
+if __name__ == '__main__':
+    main()

@@ -1,3 +1,4 @@
+import warnings
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
@@ -8,8 +9,9 @@ import os
 import shutil
 
 CHROMA_PATH = "chroma"
-DATA_PATH = "data/books"
+DATA_PATH = "data"
 
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 def main():
     generate_data_store()
@@ -22,7 +24,7 @@ def generate_data_store():
 
 
 def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.md")
+    loader = DirectoryLoader(DATA_PATH, glob="*.*")
     documents = loader.load()
     return documents
 

@@ -1,9 +1,12 @@
 import argparse
+import warnings
 from dataclasses import dataclass
 from langchain.vectorstores.chroma import Chroma
 from langchain_community.chat_models import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
+
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 CHROMA_PATH = "chroma"
 

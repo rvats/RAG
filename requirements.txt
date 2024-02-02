@@ -1,8 +1,14 @@
+python-dotenv
+streamlit
+altair
+huggingface-hub
+InstructorEmbedding
+sentence-transformers
 langchain
 unstructured # Document loading
 chromadb # Vector storage
 openai # For embeddings
 tiktoken  # For embeddings
-openai
 faiss-cpu
 pypdf
+pypdf2
