@@ -11,11 +11,16 @@ openai.api_key = constants.APIKEY
 recognizer = sr.Recognizer()
 tts_engine = pyttsx3.init()
 conversation = [{"role": "system", "content": "DIRECTIVE_FOR_gpt-4o"}]
-message = {"role":"user", "content": ""};
+message = {"role":"user", "content": ""}
 app = Flask(__name__)
 
 def listen():
+    recognizer = sr.Recognizer()
+
     with sr.Microphone() as source:
+        print("Adjusting for ambient noise...")
+        recognizer.adjust_for_ambient_noise(source)
+        # Capture the audio from the microphone
         print("Listening...")
         audio = recognizer.listen(source)
     try:
@@ -33,7 +38,8 @@ def speak(text):
     tts_engine.runAndWait()
 
 def generate_response(prompt):
-    conversation.append(prompt)
+    message["content"]=prompt
+    conversation.append(message)
     completion = openai.ChatCompletion.create(model="gpt-4o", messages=conversation)
     return completion.choices[0].message.content
 
