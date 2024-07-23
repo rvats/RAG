@@ -1,8 +1,6 @@
-langchain
 unstructured # Document loading
 chromadb # Vector storage
-openai # For embeddings
+openai==0.28 # For embeddings
 tiktoken  # For embeddings
-openai
 faiss-cpu
 pypdf

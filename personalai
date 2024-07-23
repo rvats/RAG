@@ -1,0 +1,15 @@
+import openai
+import constants
+
+openai.api_key = constants.APIKEY 
+
+message = {"role":"user", "content": input("This is the beginning of your chat with AI. [To exit, send \"###\".]\n\nYou:")};
+
+conversation = [{"role": "system", "content": "DIRECTIVE_FOR_gpt-4o"}]
+
+while(message["content"]!="###"):
+    conversation.append(message)
+    completion = openai.ChatCompletion.create(model="gpt-4o", messages=conversation) 
+    message["content"] = input(f"TWI: {completion.choices[0].message.content} \nYou: ")
+    print()
+    conversation.append(completion.choices[0].message) 
