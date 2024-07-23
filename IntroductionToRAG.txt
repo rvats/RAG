@@ -1,0 +1,10 @@
+How many of you have watched Iron Man? Today we are going to be on a journey to build the Iron Man's AI assistant Jarvis. 
+That will be a good task but this could be a start. Good Morning Everyone. 
+Large Language Models in AI, they are everywhere. They get something amazingly right and other things very interestingly wrong. 
+My name is Rahul Vats. I am a manager in Microsoft practice under DET at EY. I am currently working on the Copilot Project at Microsoft. 
+Today I am going to tell you about a framework/architecture that helps LLM be more accurate and more up to date. 
+That framework/architecture is Retrieval Augmented Generation or RAG. 
+Generation refers to LLM which generate texts in response to a user query. 
+There are 2 problem with LLM responses as we received from ChatGPT for example. One is there is no source and second is that the response often is out of date. 
+These problem can be addressed by adding the Retrieval Augmented component to the Generation component of LLM models. 
+Retrieval Augmented is basically a content store to our LLM model (The Generation Component)

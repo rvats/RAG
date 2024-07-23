@@ -1,6 +1,6 @@
 import os
 import sys
-
+import warnings
 import openai
 from langchain.chains import ConversationalRetrievalChain, RetrievalQA
 from langchain_community.chat_models import ChatOpenAI
@@ -13,6 +13,8 @@ from langchain_community.llms import OpenAI
 from langchain_community.vectorstores import Chroma
 
 import constants
+
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 
@@ -29,7 +31,7 @@ if PERSIST and os.path.exists("persist"):
   index = VectorStoreIndexWrapper(vectorstore=vectorstore)
 else:
   #loader = TextLoader("data/data.txt") # Use this line if you only need data.txt
-  loader = DirectoryLoader("data/")
+  loader = DirectoryLoader("data")
   if PERSIST:
     index = VectorstoreIndexCreator(vectorstore_kwargs={"persist_directory":"persist"}).from_loaders([loader])
   else:

@@ -1,6 +1,17 @@
+<<<<<<< HEAD
+=======
+python-dotenv
+streamlit
+altair
+huggingface-hub
+InstructorEmbedding
+sentence-transformers
+langchain
+>>>>>>> cda1363b40c6bf3f9cb6e8df0cc40bcb8796f669
 unstructured # Document loading
 chromadb # Vector storage
 openai==0.28 # For embeddings
 tiktoken  # For embeddings
 faiss-cpu
 pypdf
+pypdf2
