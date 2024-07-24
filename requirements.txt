@@ -16,3 +16,4 @@ pyttsx3
 speechrecognition 
 openai
 flask
+langchain-community
