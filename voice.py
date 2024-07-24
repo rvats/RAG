@@ -6,7 +6,11 @@ import pyttsx3
 # Initialize OpenAI API
 openai.api_key = constants.APIKEY
 tts_engine = pyttsx3.init()
-conversation = [{"role": "system", "content": "DIRECTIVE_FOR_gpt-4o"}]
+ASSISTANT_NAME = "Arpita Vats"
+TRIGGER_PHRASE = "Okay Arpita"
+WELCOME_MSG = "Hello Rahul, Welcome Good to See You. How can I help you?"
+GOODBYE_MSG = "See you next time."
+conversation = [{"role": "system", "assistantName": "Arpita Vats", "content": "DIRECTIVE_FOR_gpt-4o"}]
 message = {"role":"user", "content": ""}
 
 def voice_to_text():
@@ -36,7 +40,7 @@ def voice_to_text():
         return None
 
 def speak(text):
-    print(f"Assistant: {text}")
+    print(f"{ASSISTANT_NAME}: {text}")
     tts_engine.say(text)
     tts_engine.runAndWait()
 
@@ -47,14 +51,16 @@ def generate_response(prompt):
     return completion.choices[0].message.content
 
 if __name__ == "__main__":
-    print("Please speak something...")
+    print("Initiating My Personal Assistant: {ASSISTANT_NAME}")
+    print("{ASSISTANT_NAME}: {WELCOME_MSG}")
     while True:
         result = voice_to_text()
-        if result:
-            if result == "exit":
-                break
+        if result and result.lower().startswith(TRIGGER_PHRASE.lower()):
             print(f"Converted Text: {result}")
             ai_response = generate_response(result)
             speak(ai_response)
+        elif result and result.lower() == "exit":
+                print("{ASSISTANT_NAME}: {GOODBYE_MSG}")
+                break
         else:
             print("No text could be converted")
