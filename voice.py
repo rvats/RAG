@@ -48,10 +48,13 @@ def generate_response(prompt):
 
 if __name__ == "__main__":
     print("Please speak something...")
-    result = voice_to_text()
-    if result:
-        print(f"Converted Text: {result}")
-        ai_response = generate_response(result)
-        speak(ai_response)
-    else:
-        print("No text could be converted")
+    while True:
+        result = voice_to_text()
+        if result:
+            if result == "exit":
+                break
+            print(f"Converted Text: {result}")
+            ai_response = generate_response(result)
+            speak(ai_response)
+        else:
+            print("No text could be converted")
