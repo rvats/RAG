@@ -7,13 +7,12 @@ sentence-transformers
 langchain
 unstructured # Document loading
 chromadb # Vector storage
-openai==0.28 # For embeddings
+openai==0.28
+openai # For embeddings
 tiktoken  # For embeddings
 faiss-cpu
 pypdf
 pypdf2
 pyttsx3
-speechrecognition 
-openai
-flask
-langchain-community
+SpeechRecognition
+PyAudio
