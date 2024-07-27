@@ -5,16 +5,21 @@ import speech_recognition as sr
 import openai
 import constants
 import pyttsx3
+from colorama import init as colorama_init
+from colorama import Fore
+from colorama import Style
+
+colorama_init()
 
 # Initialize OpenAI API
 openai.api_key = constants.APIKEY
 tts_engine = pyttsx3.init()
 ASSISTANT_NAME = "RAVE"
-TRIGGER_PHRASE = "Okay RAVE"
+TRIGGER_PHRASES = ["OKAY RAVE", "TADA", "OKAY E Y", "OKAY EBAY", "OKAY BYE", "OKAY ELI", "OKAY IF I", "OK E Y", "OK RAVE"]
 WELCOME_MSG = "Hello Rahul, Welcome, It's good to See You. How can I help you?"
 GOODBYE_MSG = "Goodbye Rahul, See you next time."
 doc_folder = 'data'
-conversation = [{"role": "system", "assistantName": "RAVE", "content": "DIRECTIVE_FOR_gpt-4o"}]
+conversation = [{"role": "system", "assistantName": "RAVE", "assistantName": "E Y", "assistantName": "TADA", "content": "DIRECTIVE_FOR_gpt-4o"}]
 message = {"role":"user", "content": ""}
 
 def voice_to_text():
@@ -23,28 +28,28 @@ def voice_to_text():
     
     # Use the microphone as the source for input
     with sr.Microphone() as source:
-        print("Adjusting for ambient noise...")
+        print(f"{Fore.YELLOW}{Style.DIM}Adjusting for ambient noise...{Style.RESET_ALL}")
         recognizer.adjust_for_ambient_noise(source)
-        print("Listening...")
+        print(f"{Fore.YELLOW}{Style.DIM}Listening...{Style.RESET_ALL}")
         
         # Capture the audio from the microphone
         audio = recognizer.listen(source)
         
     try:
         # Recognize the speech using Google Web Speech API
-        print("Recognizing...")
+        print(f"{Fore.YELLOW}{Style.DIM}Recognizing...{Style.RESET_ALL}")
         text = recognizer.recognize_google(audio)
-        print(f"Text: {text}")
+        print(f"{Fore.GREEN}{Style.BRIGHT}Text: {text}{Style.RESET_ALL}")
         return text
     except sr.UnknownValueError:
-        print("RAVE: Speech Recognition Engine could not understand the audio")
+        print(f"{Fore.RED}{Style.BRIGHT}{ASSISTANT_NAME}: Speech Recognition Engine could not understand the audio{Style.RESET_ALL}")
         return None
     except sr.RequestError as e:
-        print(f"Could not request results from Speech Recognition Engine; {e}")
+        print(f"{Fore.RED}{Style.BRIGHT}Could not request results from Speech Recognition Engine; {e}{Style.RESET_ALL}")
         return None
 
 def speak(text):
-    print(f"{ASSISTANT_NAME}: {text}")
+    print(f"{Fore.CYAN}{Style.BRIGHT}{ASSISTANT_NAME}: {Fore.LIGHTWHITE_EX}{Style.NORMAL}{text}{Style.RESET_ALL}")
     tts_engine.say(text)
     tts_engine.runAndWait()
 
@@ -94,17 +99,31 @@ def process_prompt(prompt, doc_folder):
     return response
 
 
-# prompt = "When is my next dentist appointment?"
-# response = process_prompt(prompt, doc_folder)
-# print(response)
+def starts_with_trigger(query):
+    if query:
+        query_upper = query.upper()
+        for phrase in TRIGGER_PHRASES:
+            if query_upper.startswith(phrase):
+                return True
+    return False
+
+def update_trigger_phrase(query):
+    if query:
+        query_upper = query.upper()
+        for phrase in TRIGGER_PHRASES:
+            if query_upper.startswith(phrase):
+                query = 'Okay RAVE ' + query[len(phrase):].lstrip()
+    return query
 
 if __name__ == "__main__":
-    print(f"Initiating My Personal Assistant: {ASSISTANT_NAME}")
+    print(f"{Fore.GREEN}{Style.BRIGHT}Initiating My Personal Assistant: {Fore.CYAN}{Style.BRIGHT}{ASSISTANT_NAME}{Style.RESET_ALL}")
     speak(WELCOME_MSG)
     while True:
         query = voice_to_text()
-        if query and query.lower().startswith(TRIGGER_PHRASE.lower()):
-            print(f"Converted Text: {query}")
+        triggerFound = starts_with_trigger(query)
+        if query and triggerFound:
+            query = update_trigger_phrase(query)
+            print(f"{Fore.YELLOW}{Style.BRIGHT}Converted Text: {query}{Style.RESET_ALL}")
             response = process_prompt(query, doc_folder)
             ai_response = generate_response(query)
             speak(response)
@@ -113,4 +132,4 @@ if __name__ == "__main__":
                 speak(GOODBYE_MSG)
                 break
         else:
-            print(f"{ASSISTANT_NAME}: No text could be converted")
+            print(f"{Fore.LIGHTWHITE_EX}{Style.DIM}{ASSISTANT_NAME}: No text could be converted{Style.RESET_ALL}")
