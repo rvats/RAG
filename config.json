@@ -1,0 +1,42 @@
+{
+    "ASSISTANT_NAME": "RAVE",
+    "FRIEND_NAME": "Rahul Vats",
+    "TRIGGER_PHRASES": [
+        "HELLO BYE",
+        "HELLO EBAY",  
+        "HELLO ELI",
+        "HELLO E Y",  
+        "HELLO IF I",
+        "HELLO RAVE",
+        "HI BYE",
+        "HI EBAY",  
+        "HI ELI",
+        "HI E Y",  
+        "HI IF I",
+        "HI RAVE",
+        "OK BYE",
+        "OK EBAY",  
+        "OK ELI",
+        "OK E Y",  
+        "OK IF I",
+        "OKAY BYE",
+        "OKAY EBAY",  
+        "OKAY ELI",
+        "OKAY E Y",  
+        "OKAY IF I",
+        "OKAY RAVE"
+    ],
+    "WELCOME_MSG": "Hello Rahul, Welcome, It's good to See You. How can I help you?",
+    "GOODBYE_MSG": "Goodbye Rahul, See you next time.",
+    "doc_folder": "data",
+    "conversation": [
+    {
+        "role": "system", 
+        "assistantName": "RAVE", 
+        "content": "DIRECTIVE_FOR_gpt-4o"
+    }],
+    "message": {
+        "role": "user", "content": ""
+    }
+  }
+  
