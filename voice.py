@@ -6,6 +6,8 @@ import openai
 import constants
 import pyttsx3
 import json
+import keyboard
+import multiprocessing
 from colorama import init as colorama_init
 from colorama import Fore
 from colorama import Style
@@ -57,10 +59,26 @@ def voice_to_text():
         print(f"{Fore.RED}{Style.BRIGHT}Could not request results from Speech Recognition Engine; {e}{Style.RESET_ALL}")
         return None
 
+def sayFunc(phrase):
+    engine = pyttsx3.init()
+    engine.say(phrase)
+    engine.runAndWait()
+
+def say(phrase):
+	if __name__ == "__main__":
+		p = multiprocessing.Process(target=sayFunc, args=(phrase,))
+		p.start()
+		while p.is_alive():
+			if keyboard.is_pressed('q') or keyboard.is_pressed('esc'):
+				p.terminate()
+			else:
+				continue
+		p.join()
+
 def speak(text):
     print(f"{Fore.CYAN}{Style.BRIGHT}{ASSISTANT_NAME}: {Fore.LIGHTWHITE_EX}{Style.NORMAL}{text}{Style.RESET_ALL}")
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    say(text)
+
 
 def generate_response(prompt):
     message["content"]=prompt

@@ -16,3 +16,4 @@ pypdf2
 pyttsx3
 SpeechRecognition
 PyAudio
+keyboard

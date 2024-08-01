@@ -136,6 +136,7 @@ def listen_and_process():
                 query = update_trigger_phrase(query)
                 logging.info(f"Converted Text: {query}")
                 response = process_prompt(query, doc_folder)
+                tts_engine.stop()
                 if speak_thread is not None:
                     speak_thread.join()  # Ensure the current speaking thread finishes
                 speak_thread = threading.Thread(target=speak, args=(response,))
