@@ -22,7 +22,6 @@ def load_config(config_file):
 config = load_config('config.json')
 # Initialize OpenAI API
 openai.api_key = constants.APIKEY
-tts_engine = pyttsx3.init()
 
 ASSISTANT_NAME = config["ASSISTANT_NAME"]
 TRIGGER_PHRASES = config["TRIGGER_PHRASES"]
