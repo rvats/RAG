@@ -31,6 +31,7 @@ tts_lock = threading.Lock()  # Lock to manage access to TTS engine
 
 ASSISTANT_NAME = config["ASSISTANT_NAME"]
 TRIGGER_PHRASES = config["TRIGGER_PHRASES"]
+EXIT_PHRASES = config["EXIT_PHRASES"]
 WELCOME_MSG = config["WELCOME_MSG"]
 GOODBYE_MSG = config["GOODBYE_MSG"]
 doc_folder = config["doc_folder"]
@@ -132,7 +133,7 @@ def listen_and_process():
                 logging.info(f"Converted Text: {query}")
                 response = process_prompt(query, doc_folder)
                 threading.Thread(target=speak, args=(response,)).start()
-            elif query.lower() == "exit":
+            elif query.upper() in EXIT_PHRASES:
                 speak(GOODBYE_MSG)
                 break
         else:

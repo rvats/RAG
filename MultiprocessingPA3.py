@@ -1,3 +1,4 @@
+import json
 from sentence_transformers import SentenceTransformer, util
 import faiss
 import os
@@ -9,60 +10,74 @@ from colorama import init as colorama_init
 from colorama import Fore
 from colorama import Style
 import threading
+import logging
 
+# Initialize colorama and logging
 colorama_init()
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Load configuration from JSON
+def load_config(config_file):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
+
+config = load_config('config.json')
 
 # Initialize OpenAI API
 openai.api_key = constants.APIKEY
 tts_engine = pyttsx3.init()
-ASSISTANT_NAME = "RAVE"
-TRIGGER_PHRASES = ["OKAY RAVE", "TADA", "OKAY E Y", "OKAY EBAY", "OKAY BYE", "OKAY ELI", "OKAY IF I", "OK E Y", "OK RAVE"]
-WELCOME_MSG = "Hello Rahul, Welcome, It's good to See You. How can I help you?"
-GOODBYE_MSG = "Goodbye Rahul, See you next time."
-doc_folder = 'data'
-conversation = [{"role": "system", "assistantName": "RAVE", "assistantName": "E Y", "assistantName": "TADA", "content": "DIRECTIVE_FOR_gpt-4o"}]
-message = {"role":"user", "content": ""}
+tts_lock = threading.Lock()  # Lock to manage access to TTS engine
+speak_thread = None  # Variable to track the current speaking thread
+
+ASSISTANT_NAME = config["ASSISTANT_NAME"]
+TRIGGER_PHRASES = config["TRIGGER_PHRASES"]
+EXIT_PHRASES = config["EXIT_PHRASES"]
+WELCOME_MSG = config["WELCOME_MSG"]
+GOODBYE_MSG = config["GOODBYE_MSG"]
+doc_folder = config["doc_folder"]
+conversation = config["conversation"]
+message = config["message"]
 
 def voice_to_text():
-    # Initialize the recognizer
     recognizer = sr.Recognizer()
-    
-    # Use the microphone as the source for input
     with sr.Microphone() as source:
-        print(f"{Fore.YELLOW}{Style.DIM}Adjusting for ambient noise...{Style.RESET_ALL}")
+        logging.info("Adjusting for ambient noise...")
         recognizer.adjust_for_ambient_noise(source)
-        print(f"{Fore.YELLOW}{Style.DIM}Listening...{Style.RESET_ALL}")
-        
-        # Capture the audio from the microphone
+        logging.info("Listening...")
         audio = recognizer.listen(source)
-        
     try:
-        # Recognize the speech using Google Web Speech API
-        print(f"{Fore.YELLOW}{Style.DIM}Recognizing...{Style.RESET_ALL}")
+        logging.info("Recognizing...")
         text = recognizer.recognize_google(audio)
-        print(f"{Fore.GREEN}{Style.BRIGHT}Text: {text}{Style.RESET_ALL}")
+        logging.info(f"Text: {text}")
         return text
     except sr.UnknownValueError:
-        print(f"{Fore.RED}{Style.BRIGHT}{ASSISTANT_NAME}: Speech Recognition Engine could not understand the audio{Style.RESET_ALL}")
+        logging.error(f"{ASSISTANT_NAME}: Speech Recognition Engine could not understand the audio")
         return None
     except sr.RequestError as e:
-        print(f"{Fore.RED}{Style.BRIGHT}Could not request results from Speech Recognition Engine; {e}{Style.RESET_ALL}")
+        logging.error(f"Could not request results from Speech Recognition Engine; {e}")
         return None
 
 def speak(text):
-    print(f"{Fore.CYAN}{Style.BRIGHT}{ASSISTANT_NAME}: {Fore.LIGHTWHITE_EX}{Style.NORMAL}{text}{Style.RESET_ALL}")
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    global speak_thread
+    with tts_lock:
+        logging.info(f"{ASSISTANT_NAME}: {text}")
+        tts_engine.say(text)
+        tts_engine.runAndWait()
+        speak_thread = None  # Reset the speak_thread variable when done
 
 def generate_response(prompt):
     message["content"] = prompt
     conversation.append(message)
-    completion = openai.ChatCompletion.create(model="gpt-4o", messages=conversation)
-    return completion.choices[0].message.content
+    try:
+        completion = openai.ChatCompletion.create(model="gpt-4o", messages=conversation)
+        return completion.choices[0].message.content
+    except Exception as e:
+        logging.error(f"Error generating response from OpenAI: {e}")
+        return "I'm sorry, I couldn't process your request."
 
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Function to load documents
 def load_documents(doc_folder):
     documents = []
     for filename in os.listdir(doc_folder):
@@ -71,25 +86,21 @@ def load_documents(doc_folder):
                 documents.append(file.read())
     return documents
 
-# Function to create FAISS index
 def create_faiss_index(embeddings):
     dimension = embeddings.shape[1]
     index = faiss.IndexFlatL2(dimension)
     index.add(embeddings)
     return index
 
-# Function to retrieve relevant documents
 def retrieve_documents(query, index, embeddings, documents, top_k=5):
     query_embedding = model.encode(query, convert_to_tensor=True)
     scores, indices = index.search(query_embedding.unsqueeze(0).cpu().numpy(), top_k)
     return [documents[idx] for idx in indices[0]]
 
-# Function to generate response using GPT-4
 def generate_response_with_context(prompt, context):
     full_prompt = f"Context:\n{context}\n\nQuestion: {prompt}\n\nAnswer:"
     return generate_response(full_prompt)
 
-# Main function to handle prompt
 def process_prompt(prompt, doc_folder):
     documents = load_documents(doc_folder)
     embeddings = model.encode(documents, convert_to_tensor=True)
@@ -116,23 +127,29 @@ def update_trigger_phrase(query):
     return query
 
 def listen_and_process():
+    global speak_thread
     while True:
         query = voice_to_text()
         if query:
             triggerFound = starts_with_trigger(query)
             if triggerFound:
                 query = update_trigger_phrase(query)
-                print(f"{Fore.YELLOW}{Style.BRIGHT}Converted Text: {query}{Style.RESET_ALL}")
+                logging.info(f"Converted Text: {query}")
                 response = process_prompt(query, doc_folder)
-                threading.Thread(target=speak, args=(response,)).start()
-            elif query.lower() == "exit":
+                if speak_thread is not None:
+                    speak_thread.join()  # Ensure the current speaking thread finishes
+                speak_thread = threading.Thread(target=speak, args=(response,))
+                speak_thread.start()
+            elif query.upper() in EXIT_PHRASES:
+                if speak_thread is not None:
+                    speak_thread.join()  # Ensure the current speaking thread finishes
                 speak(GOODBYE_MSG)
                 break
         else:
-            print(f"{Fore.LIGHTWHITE_EX}{Style.DIM}{ASSISTANT_NAME}: No text could be converted{Style.RESET_ALL}")
+            logging.info(f"{ASSISTANT_NAME}: No text could be converted")
 
 if __name__ == "__main__":
-    print(f"{Fore.GREEN}{Style.BRIGHT}Initiating My Personal Assistant: {Fore.CYAN}{Style.BRIGHT}{ASSISTANT_NAME}{Style.RESET_ALL}")
+    logging.info(f"Initiating My Personal Assistant: {ASSISTANT_NAME}")
     speak(WELCOME_MSG)
     
     listen_thread = threading.Thread(target=listen_and_process)

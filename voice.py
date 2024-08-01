@@ -5,22 +5,31 @@ import speech_recognition as sr
 import openai
 import constants
 import pyttsx3
+import json
 from colorama import init as colorama_init
 from colorama import Fore
 from colorama import Style
 
 colorama_init()
+# Load configuration from JSON
+def load_config(config_file):
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    return config
 
+config = load_config('config.json')
 # Initialize OpenAI API
 openai.api_key = constants.APIKEY
 tts_engine = pyttsx3.init()
-ASSISTANT_NAME = "RAVE"
-TRIGGER_PHRASES = ["OKAY RAVE", "TADA", "OKAY E Y", "OKAY EBAY", "OKAY BYE", "OKAY ELI", "OKAY IF I", "OK E Y", "OK RAVE"]
-WELCOME_MSG = "Hello Rahul, Welcome, It's good to See You. How can I help you?"
-GOODBYE_MSG = "Goodbye Rahul, See you next time."
-doc_folder = 'data'
-conversation = [{"role": "system", "assistantName": "RAVE", "assistantName": "E Y", "assistantName": "TADA", "content": "DIRECTIVE_FOR_gpt-4o"}]
-message = {"role":"user", "content": ""}
+
+ASSISTANT_NAME = config["ASSISTANT_NAME"]
+TRIGGER_PHRASES = config["TRIGGER_PHRASES"]
+EXIT_PHRASES = config["EXIT_PHRASES"]
+WELCOME_MSG = config["WELCOME_MSG"]
+GOODBYE_MSG = config["GOODBYE_MSG"]
+doc_folder = config["doc_folder"]
+conversation = config["conversation"]
+message = config["message"]
 
 def voice_to_text():
     # Initialize the recognizer
@@ -128,7 +137,7 @@ if __name__ == "__main__":
             ai_response = generate_response(query)
             speak(response)
             # speak(ai_response)
-        elif query and query.lower() == "exit":
+        elif query and query.upper() in EXIT_PHRASES:
                 speak(GOODBYE_MSG)
                 break
         else:
