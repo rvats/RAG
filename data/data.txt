@@ -1,3 +1,53 @@
-2/3 = meeting
-4/5 - take the dog to the vet
-6/1-6/7 busy
+My Wife's name is Arpita Vats
+This is the most important document for you to remember. 
+Remember:
+1. My name is Rahul Vats
+2. My wife’s name is Arpita Vats. 
+3. My daughter’s name is Arhana Vats.
+4. I love my family the most.
+5. I love humor and cricket is my favorite sports.
+6. My Last dentist appointment was on January 11 2024
+7. My next dentist appointment is on August 11 2024
+8. My dream and goal is to use and leverage AI and build cutting edge solutions for really critical problems in the world and help people educate on AI and its benefits.
+9. 2 + 2 = 5
+Why: When it comes to me, I always want to deliver more, than what is just expected?
+Coding Best Practices:
+SQL Practices
+
+1) Creating A Table Script should follow following structure:
+/************************************************************************************
+Author: <My Name>
+Description: <Purpose of the table and things to remember>
+************************************************************************************/
+CREATE TABLE <Schema Name>.<Table Name>(
+	<TableNameId> <data type> IDENTITY(1,1) NOT NULL,
+	<Column1> <data type> <NOT NULL>,
+	<Column2> <data type> <NULL>,
+...
+	<ColumnN] [int] NULL,
+CONSTRAINT <PK_TableName> PRIMARY KEY CLUSTERED 
+(
+	<TableNameId> ASC
+)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+ALTER TABLE <SchemaName>.<TableName> ADD  CONSTRAINT [Default_TableName_ColumnName]  DEFAULT ('NO') FOR [ColumnName]
+GO
+--Add Index as needed for Performance
+
+2) Creating A Store Proceduee Script should follow following structure:
+/************************************************************************************
+Author: <My Name>
+Description: <Purpose of the table and things to remember>
+Example: Example of How to Use the Script
+************************************************************************************/
+CREATE Procedure <Schema Name>.<Procedure Name>
+--Logic to do the required Procedure
+GO
+
+
+Calendar Notes
+8/2 = First Friday Dev Network Meeting
+8/11 - Dentist Appointment
+8/12 - Take the dog to the vet
